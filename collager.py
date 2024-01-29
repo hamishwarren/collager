@@ -1,6 +1,8 @@
 import os
 import random
+from pathlib import Path
 from PIL import Image
+
 
 def get_image_files(input_paths):
     image_files = []
@@ -8,14 +10,15 @@ def get_image_files(input_paths):
         if os.path.isdir(input_path):
             # If the input is a directory, get all files and filter only PNG files
             for file in os.listdir(input_path):
-                if file.lower().endswith('.png'):
+                if file.lower().endswith(".png"):
                     image_files.append(os.path.join(input_path, file))
-        elif input_path.lower().endswith('.png'):
+        elif input_path.lower().endswith(".png"):
             # If the input is a single PNG file, add it to the list
             image_files.append(input_path)
         else:
             raise ValueError(f"Input '{input_path}' is not a valid PNG file or folder.")
     return image_files
+
 
 def create_collage(input_paths, output_pdf):
     # Get the list of input PNG files
@@ -38,7 +41,7 @@ def create_collage(input_paths, output_pdf):
     scaling_factor = min(page_width / total_width, page_height / total_height)
 
     # Create a new blank image for the PDF
-    pdf_image = Image.new('RGB', (page_width, page_height), 'white')
+    pdf_image = Image.new("RGB", (page_width, page_height), "white")
 
     # Shuffle the list of images
     random.shuffle(image_files)
@@ -62,20 +65,21 @@ def create_collage(input_paths, output_pdf):
             current_y += height
 
     # Save the collage as a PDF file
-    pdf_image.save(output_pdf, 'PDF', resolution=100.0)
+    pdf_image.save(output_pdf, "PDF", resolution=100.0)
+
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Create a collage of PNG images and save as PDF")
-    parser.add_argument("input", nargs='+', help="Input PNG files and/or folders containing PNG files")
+    parser.add_argument("input", nargs="+", help="Input PNG files and/or folders containing PNG files")
     parser.add_argument("--output", "-o", help="Output PDF file name", default="collage.pdf")
     args = parser.parse_args()
 
     if args.input:
         # Check if the output file ends with '.pdf'
-        if not args.output.endswith('.pdf'):
-            args.output += '.pdf'
+        if not args.output.endswith(".pdf"):
+            args.output += ".pdf"
 
         create_collage(args.input, args.output)
         print(f"Collage saved as {args.output}")
