@@ -1,7 +1,7 @@
 import os
-import random
 from pathlib import Path
 from PIL import Image
+import math
 
 
 def get_image_files(input_paths):
@@ -10,9 +10,9 @@ def get_image_files(input_paths):
         if os.path.isdir(input_path):
             # If the input is a directory, get all files and filter only PNG files
             for file in os.listdir(input_path):
-                if file.lower().endswith(".png"):
+                if file.lower().endswith((".png", ".jpg", ".jpeg")):
                     image_files.append(os.path.join(input_path, file))
-        elif input_path.lower().endswith(".png"):
+        elif input_path.lower().endswith((".png", ".jpg", ".jpeg")):
             # If the input is a single PNG file, add it to the list
             image_files.append(input_path)
         else:
@@ -29,37 +29,45 @@ def create_collage(input_paths, output_pdf):
         return
 
     # Calculate the dimensions of the page
-    page_width, page_height = 2560, 1664
+    page_width, page_height = 2560, 1564
 
     # Calculate a scaling factor based on the page size and combined image sizes
-    total_width, total_height = 0, 0
-    for image_file in image_files:
-        image = Image.open(image_file)
-        total_width += image.width
-        total_height += image.height
+    total_area = sum(image.width * image.height for image_file in image_files for image in [Image.open(image_file)])
+    page_area = page_width * page_height
 
-    scaling_factor = min(page_width / total_width, page_height / total_height)
+    scaling_factor = math.sqrt(page_area / total_area) * 0.9
+    print(scaling_factor)
 
     # Create a new blank image for the PDF
     pdf_image = Image.new("RGB", (page_width, page_height), "white")
 
-    # Shuffle the list of images
-    random.shuffle(image_files)
-
     current_x, current_y = 0, 0
+    max_height_in_row = 0
     for image_file in image_files:
         image = Image.open(image_file)
 
         # Resize the image based on the scaling factor
         width = int(image.width * scaling_factor)
         height = int(image.height * scaling_factor)
-        image = image.resize((width, height), Image.LANCZOS)
+        image = image.resize((width, height))
 
-        # Paste the image onto the PDF image at the current position
+        # If the image doesn't fit in the current row, move to the next row
+        if current_x + width > page_width:
+            current_x = 0
+            current_y += max_height_in_row
+            max_height_in_row = height
+
+        # If the image doesn't fit on the page, stop adding images
+        if current_y + height > page_height:
+            break
+
+        # Paste the image onto the PDF image
         pdf_image.paste(image, (current_x, current_y))
 
-        # Update the current position for the next image
+        # Update the current x position and the maximum height in the current row
         current_x += width
+        max_height_in_row = max(max_height_in_row, height)
+
         if current_x >= page_width:
             current_x = 0
             current_y += height
