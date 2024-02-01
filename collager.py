@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import os
 from pathlib import Path
 from PIL import Image
@@ -20,7 +22,7 @@ def get_image_files(input_paths):
     return image_files
 
 
-def create_collage(input_paths, output_pdf):
+def create_collage(input_paths, output_pdf, scaling_factor):
     # Get the list of input PNG files
     image_files = get_image_files(input_paths)
 
@@ -35,7 +37,7 @@ def create_collage(input_paths, output_pdf):
     total_area = sum(image.width * image.height for image_file in image_files for image in [Image.open(image_file)])
     page_area = page_width * page_height
 
-    scaling_factor = math.sqrt(page_area / total_area) * 0.9
+    scaling_factor = math.sqrt(page_area / total_area) * float(scaling_factor)
     print(scaling_factor)
 
     # Create a new blank image for the PDF
@@ -82,6 +84,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a collage of PNG images and save as PDF")
     parser.add_argument("input", nargs="+", help="Input PNG files and/or folders containing PNG files")
     parser.add_argument("--output", "-o", help="Output PDF file name", default="collage.pdf")
+    parser.add_argument("--scaling_factor", "-s", help="Scaling factor", default=0.8)
     args = parser.parse_args()
 
     if args.input:
@@ -89,7 +92,11 @@ if __name__ == "__main__":
         if not args.output.endswith(".pdf"):
             args.output += ".pdf"
 
-        create_collage(args.input, args.output)
+        if not args.output:
+            output_path = Path(args.input[0])
+            args.output = output_path.parent / "collage.pdf"
+
+        create_collage(args.input, args.output, args.scaling_factor)
         print(f"Collage saved as {args.output}")
     else:
         print("No input provided.")
